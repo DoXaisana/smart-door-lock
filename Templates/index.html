@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Door Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-blue-50 to-blue-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">🚪 Smart Door System</h1>
+
+    <!-- Door Status -->
+    <div class="mb-4">
+      <p class="text-lg font-semibold text-gray-700">Door Status:</p>
+      <div id="doorStatus" class="text-xl font-bold text-green-600 mt-1">Unlocked</div>
+    </div>
+
+    <!-- Door Control Buttons (Optional for real-time control) -->
+    <div class="flex justify-center gap-4 mt-4">
+      <button class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+        Unlock
+      </button>
+      <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+        Lock
+      </button>
+      <button class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
+        Open Door
+      </button>
+    </div>
+
+    <!-- Link to Logs Page -->
+    <div class="mt-8">
+      <a href="log.html" class="inline-block bg-gray-800 text-white font-semibold py-2 px-4 rounded hover:bg-gray-700 transition">
+        View Door Logs
+      </a>
+    </div>
+  </div>
+</body>
+</html>
