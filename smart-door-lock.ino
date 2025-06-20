@@ -1,85 +1,95 @@
+#include <Servo.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <Servo.h>
 
+// Pin Definitions
 const int lockButtonPin = 2;
 const int openButtonPin = 3;
-const int redLEDPin = 9;
-const int greenLEDPin = 10;
-const int servoPin = 11;
+const int redLEDPin = 5;
+const int greenLEDPin = 6;
+const int blueLEDPin = 7; // Optional
+const int servoPin = 9;
 
-bool isLocked = true;
-bool lastLockButtonState = LOW;
-bool lastOpenButtonState = LOW;
+int doorclosetime = 2000;
 
+// Objects
 Servo doorServo;
-LiquidCrystal_I2C lcd(0x27, 16, 2);  // I2C address 0x27, 16 columns, 2 rows
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Adjust address if needed
+
+// State
+bool isLocked = true;
 
 void setup() {
-  pinMode(lockButtonPin, INPUT);
-  pinMode(openButtonPin, INPUT);
+  // Initialize Serial
+  Serial.begin(9600);
+
+  // Buttons as INPUT_PULLUP
+  pinMode(lockButtonPin, INPUT_PULLUP);
+  pinMode(openButtonPin, INPUT_PULLUP);
+
+  // RGB LED
   pinMode(redLEDPin, OUTPUT);
   pinMode(greenLEDPin, OUTPUT);
+  pinMode(blueLEDPin, OUTPUT); // Optional
 
+  // Servo
   doorServo.attach(servoPin);
-  doorServo.write(0); // Initial closed position
+  doorServo.write(0); // Closed position
 
+  // LCD
   lcd.init();
   lcd.backlight();
-  updateLED();
-  updateLCD();
+
+  updateStatus(); // Initial display
 }
 
 void loop() {
-  bool lockButtonState = digitalRead(lockButtonPin);
-  bool openButtonState = digitalRead(openButtonPin);
-
-  // Handle lock/unlock status toggle
-  if (lockButtonState == HIGH && lastLockButtonState == LOW) {
+  // Handle lock/unlock toggle
+  if (digitalRead(lockButtonPin) == LOW) {
+    delay(200); // debounce
     isLocked = !isLocked;
-    updateLED();
-    updateLCD();
-    delay(200);
+    updateStatus();
+    Serial.println(isLocked ? "LOCKED" : "UNLOCKED");
+    while (digitalRead(lockButtonPin) == LOW); // wait for release
   }
-  lastLockButtonState = lockButtonState;
 
-  // Handle door open
-  if (openButtonState == HIGH && lastOpenButtonState == LOW) {
-    if (!isLocked) {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Door Opening...");
-      doorServo.write(90);  // Open
-      delay(5000);          // Hold open for 2 seconds
-      doorServo.write(0);   // Close
-      lcd.clear();
-      updateLCD();
-    } else {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Can't Open Door");
-      lcd.setCursor(0, 1);
-      lcd.print("It's Locked");
-      delay(1500);
-      lcd.clear();
-      updateLCD();
-    }
-    delay(200);
+  // Handle open door
+  if (digitalRead(openButtonPin) == LOW && !isLocked) {
+    delay(200); // debounce
+    openDoor();
+    while (digitalRead(openButtonPin) == LOW); // wait for release
   }
-  lastOpenButtonState = openButtonState;
+
+  // Listen to serial from Python
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+    if (command == "OPEN" && !isLocked) {
+      openDoor();
+    }
+  }
 }
 
-// Update RGB LED status
-void updateLED() {
+void updateStatus() {
+  // Update RGB LED
   digitalWrite(redLEDPin, isLocked ? HIGH : LOW);
   digitalWrite(greenLEDPin, isLocked ? LOW : HIGH);
+  digitalWrite(blueLEDPin, LOW); // Not used
+
+  // Update LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Door is:");
+  lcd.setCursor(0, 1);
+  lcd.print(isLocked ? "LOCKED 🔒" : "UNLOCKED 🔓");
 }
 
-// Update LCD screen
-void updateLCD() {
+void openDoor() {
+  lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Status: ");
-  lcd.print(isLocked ? "LOCKED   " : "UNLOCKED ");
-  lcd.setCursor(0, 1);
-  lcd.print("Press Open Btn");
+  lcd.print("Opening door...");
+  doorServo.write(90);  // Open
+  delay(doorclosetime);
+  doorServo.write(0);   // Close
+  updateStatus();
 }
